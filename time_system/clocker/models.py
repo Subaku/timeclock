@@ -1,149 +1,27 @@
 from django.db import models
-from django.db.models import Q
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from datetime import datetime
 from decimal import Decimal
-import re
 
-from chucho.models import ChuchoManager
 
-class EmployeeManager(BaseUserManager, ChuchoManager):
-    def can_edit(self, user):
-        '''
-        ' Checks if a User is allowed to edit or add instances of this model.
-        '
-        ' Keyword Arguments:
-        '   user - User to check permission for.
-        '
-        ' Return: True if user is allowed to edit objects of this model and False otherwise.
-        '''
-
-        #Validate user object
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an auth user" % str(user))
-
-        if user.is_superuser:
-            return True
-
-        return False
-
-    def get_viewable(self, user, filter_args=None, omni=None):
-        '''
-        ' Gets all Employees that can be viewed or assigned by a specific AuthUser.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter viewable Employees by.
-        '
-        ' Return: QuerySet of Employees that can be viewed by specified user.
-        '''
-        # TODO: Wrapper until we decide to differentiate this from editable.
-        return self.get_editable(user, filter_args, omni)
-
-    def get_editable(self, user, filter_args=None, omni=None):
-        ''' 
-        ' Gets all the users that can be edited by a specified user.
-        '
-        ' Right now only superusers can edit.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter editable employees by.
-        '
-        ' Return: QuerySet of Employees that are viewable by the specified User.
-        '''
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an Auth User" % str(user))
-
-        if filter_args is not None and len(filter_args) > 0:
-            objs = self.filter(**filter_args)
-        elif omni is not None:
-            objs = self.search(omni)
-        else:
-            objs = self.all()
-        if user.is_superuser:
-            return objs
-
-        return objs.filter(username=user.username)
-
-    def get_editable_by_pk(self, user, pk):
-        '''
-        ' Get's an instance of Employee specified by a pk if the given user is allowed to edit it.
-        '
-        ' Keyword Arguments: 
-        '   user - User to check if the employee can be edited by them.
-        '   pk   - Primary key of Employee to get.
-        '
-        ' Return: Employee identified by pk if user can edit it, otherwise None.
-        '''
-        
-        if not isinstance(user, Employee):
-            raise TypeError('%s is not an Auth User' % str(user))
-
-        try:
-            u = self.get(id=pk)
-        except Employee.DoesNotExist:
-            raise Employee.DoesNotExist("An Employee does not exist for the primary key %s." % str(pk))
-
-        if user.is_superuser:
-            return u
-        return None
-
-    def search(self, search_str, operator=None, column=None):
-        '''Overwrite chucho default search for user.'''
-        # Regexes to trigger different kinds of searches.
-        pattern_name1 = r'^\s*(.+)\s+(.+)\s*$'
-        pattern_name2 = r'^\s*(.+),\s*(.+)\s*$'
-        pattern_username = r'^\s*(.+)\s*$'
-        
-        q_list = []
-        m = re.match(pattern_name1, search_str, re.I)
-        if m is not None:
-            q_list.append(Q(first_name__icontains=m.group(1), last_name__icontains=m.group(2)))
-
-        m = re.match(pattern_name2, search_str, re.I)
-        if m is not None:
-            q_list.append(Q(first_name__icontains=m.group(2), last_name__icontains=m.group(1)))
-
-        m = re.match(pattern_username, search_str, re.I)
-        if m is not None:
-            q_list.append(Q(username__icontains=m.group(1)))
-            q_list.append(Q(first_name__icontains=m.group(1)))
-            q_list.append(Q(last_name__icontains=m.group(1)))
-
-        q_all = None
-        for q in q_list:
-            if q_all is None:
-                q_all = q
-            else:
-                q_all |= q
-
-        if q_all is None:
-            return self.none()
-        else:
-            return self.filter(q_all)
+class EmployeeManager(BaseUserManager):
+    pass
 
 
 class Employee(AbstractBaseUser):
-    hire_date = models.DateField('date employee was hired')
-    has_salary = models.BooleanField()
-    hourly_rate = models.DecimalField(max_digits = 5, decimal_places = 2, null = True, blank=True)
-    salary = models.DecimalField(max_digits = 8, decimal_places = 2, null = True, blank=True)
+    hireDate = models.BigIntegerField()
+    salaried = models.BooleanField()
+    hourlyRate = models.DecimalField(max_digits = 5, decimal_places = 2, null = True, blank=True)
+    salary = models.DecimalField(max_digits = 9, decimal_places = 2, null = True, blank=True)
     username = models.CharField(max_length=40, unique=True)
-    first_name = models.CharField(max_length=25)
-    last_name = models.CharField(max_length=25)
-    is_superuser = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    date_joined = models.DateTimeField(default=datetime.now())
+    firstName = models.CharField(max_length=25)
+    lastName = models.CharField(max_length=25)
+    isActive = models.BooleanField(default=True)
+    dateJoined = models.BigIntegerField()
 
     objects = EmployeeManager()
 
     USERNAME_FIELD = "username"
-
-    column_options = {
-        'id': {'grid_column': False},
-        'password': {'_type': 'password', 'grid_column': False},
-        'date_joined': {'grid_column': False},
-        'last_login': {'grid_column': False, '_editable': False}
-        }
 
     class Meta:
         ordering = ['username']
@@ -151,215 +29,61 @@ class Employee(AbstractBaseUser):
     def __unicode__(self):
         return self.first_name + " " + self.last_name
 
-    def can_view(self, user):
-        '''
-        ' Checks if a User instance is allowed to view this object instance or not.
-        '
-        ' Keyword Arguments:
-        '   user - AuthUser to check if they have permissions.
-        '
-        ' Return: True if user is allowed to view and False otherwise.
-        '''
-
-        if not isinstance(user, Employee):
-            raise TypeError('%s is not an auth user' % str(user))
-
-        if user.is_superuser or user == self:
-            return True
-
-        return False
-
-    def clock_in(self):
-        """
-        Clocks an employee in.  
+    def clockIn(self, timeIn):
         
-        Returns: 
-            The error message "none" if the user clocked in and "in" if the user was not able to clock in
-        """
+        assert self.isClockedIn() is None
 
-        dictionary = self.which_clock()
+        shift = Shift(employee=self, timeIn=timeIn)
+        try:
+            shift.full_clean()
+            shift.save()
+        except ValidationError as e:
+            #TODO: handle this
+            print e
 
-        #Employee has never clocked in before or has previously clocked out
-        if(dictionary['status'] == "in"):
-            return "in"
-        else:
-            time = Shift(employee=self,
-                        time_in=datetime.now())
-            time.save()
-            return "none"
-
-    def clock_out(self):
-        """
-        Clocks an employee out.  
+    def clockOut(self, timeOut):
         
-        Returns: 
-            The error message "none" if the user clocked out and "out" if the user was not able to clock out.
-        """
-        
-        dictionary = self.which_clock()
+        shift = self.isClockedIn()
+        assert isinstance(shift, Shift)
 
-        #Employee has never clocked out before or has not clocked in yet.
-        if(dictionary['status'] == "out"):
-            return "out"
-        else:
-            time = Shift(id=dictionary['max_record'].id,
-                        employee=dictionary['max_record'].employee,
-                        time_in=dictionary['max_record'].time_in,
-                        time_out=datetime.now())
-            time.save()
-            return "none"
+        shift.timeOut = timeOut
+        try:
+            shift.full_clean()
+            shift.save()
+        except ValidationError as e:
+            #TODO: handle this
+            print e
 
-    def which_clock(self):
-        """
-        Checks to see whether an employee is clocked in or out. 
-
-        Returns:
-            A dictionary with the status of the employee and the maximum time record that was used to determine this.
-            Keys: 'status' 'max_record'
-        TODO: It is possible for an admin to never be clocked into our time system. 
-        """
-
-        max_id = Shift.objects.filter(employee=self).aggregate(employee=models.Max('id'))
-
-        #print "max: %s" %  max_id #DEBUG
-
-        if(max_id['employee'] == None):
-            stuff = {'status':"out", 'max_record':None}
-            return stuff
-
-        record = Shift.objects.get(id=max_id['employee'])
-        stuff = {
-                    'max_record':record
-                }
-
-        if(record == None or record.time_out != None):
-            stuff['status'] = "out"
-            return stuff 
-       
-        stuff['status'] = "in"
-        return stuff 
-
-    def get_current_time(self):
-
-        dictionary = self.which_clock()
-
-        if(dictionary['status'] == "in"):
-            time_in = dictionary['max_record'].time_in
-            time_now = datetime.now()
-
-
-class ShiftManager(ChuchoManager):
-    def get_editable_by_pk(self, user, pk):
-        '''
-        ' Get's an instance of Shift specified by a pk if the given user is allowed to edit it.
-        '
-        ' Keyword Arguments: 
-        '   user - User to check if the user can be edited by them.
-        '   pk   - Primary key of Shift to get.
-        '
-        ' Return: Shift identified by pk if user can edit it, otherwise None.
-        '''
-        
-        if not isinstance(user, Employee):
-            raise TypeError('%s is not an Auth User' % str(user))
+    def isClockIn(self):
 
         try:
-            u = self.get(id=pk)
+            return Shift.objects.get(employee=self, timeOut=None)
         except Shift.DoesNotExist:
-            raise Shift.DoesNotExist("A Shift does not exist for the primary key %s." % str(pk))
-
-        if user.is_superuser or u.employee == user:
-            return u
-        return None
-
-    def can_edit(self, user):
-        '''
-        ' Checks if a User is allowed to edit or add instances of this model.
-        '
-        ' Keyword Arguments:
-        '   user - User to check permission for.
-        '
-        ' Return: True if user is allowed to edit objects of this model and False otherwise.
-        '''
-
-        #Validate user object
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an auth user" % str(user))
-
-        return True
+            return None
+        except Shift.MultipleObjectsReturned as e:
+            #TODO: handle this
+            return e
 
 
-    def get_viewable(self, user, filter_args=None, omni=None):
-        '''
-        ' Gets all ShiftSummerys that can be viewed or assigned by a specific AuthUser.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter viewable ShiftSummerys by.
-        '
-        ' Return: QuerySet of ShiftSummerys that can be viewed by specified user.
-        '''
-        # TODO: Wrapper until we decide to differentiate this from editable.
-        return self.get_editable(user, filter_args, omni)
-
-
-    def get_editable(self, user, filter_args=None, omni=None):
-        ''' 
-        ' Gets all the shifts that can be edited by a specified user.
-        '
-        ' Right now only superusers can edit.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter editable employees by.
-        '
-        ' Return: QuerySet of Shifts that are viewable by the specified User.
-        '''
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an Auth User" % str(user))
-
-        if filter_args is not None and len(filter_args) > 0:
-            objs = self.filter(**filter_args)
-        elif omni is not None:
-            objs = self.search(omni)
-        else:
-            objs = self.all()
-
-        if user.is_superuser:
-            return objs
-        
-        return objs.filter(employee = user)
+class ShiftManager(models.Manager):
+    pass
 
 
 class Shift(models.Model):
     employee = models.ForeignKey('Employee')
-    time_in = models.DateTimeField('clock in time')
-    time_out = models.DateTimeField('clock out time', null = True, blank=True)
-    hours = models.DecimalField(null=True, blank=True, decimal_places=2, max_digits=4)
+    summaries = models.ManyToManyField('ShiftSummary')
+    timeIn = models.BigIntegerField()
+    timeOut = models.BigIntegerField(null = True, blank=True)
+    totalHours = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
 
     objects = ShiftManager()
 
-    column_options = {
-        'id': {'grid_column': False}
-        }
-
-    # chucho omni search fields
-    search_fields = ['employee', 'time_in', 'time_out']
-
     class Meta:
-        db_table = 'Shift'
-        ordering = ['-time_in', 'employee']
-
-    def __unicode__(self):
-        data = "TIME_IN: " + self.time_in.strftime("%Y-%m-%d %H:%M") + " TIME_OUT: "
-        if(self.time_out != None):
-            data += self.time_out.strftime("%Y-%m-%d %H:%M") + " " + self.employee.first_name + " " + self.employee.last_name
-        else:
-            data += " " + self.employee.first_name + " " + self.employee.last_name
-
-        return data
+        ordering = ['-timeIn', 'employee']
 
     def save(self, *args, **kwargs):
-        if self.time_out is not None:
-            diff = self.time_out - self.time_in
+        if self.timeOut is not None:
+            diff = self.timeOut - self.timeIn
             hours = Decimal(diff.total_seconds()/3600).quantize(Decimal('1.00'))
             self.hours = hours
         else:
@@ -368,255 +92,33 @@ class Shift(models.Model):
         super(Shift, self).save(*args, **kwargs)
 
 
-    def can_view(self, user):
-        '''
-        ' Checks if a User instance is allowed to view this object instance or not.
-        '
-        ' Keyword Arguments:
-        '   user - AuthUser to check if they have permissions.
-        '
-        ' Return: True if user is allowed to view and False otherwise.
-        '''
-
-        if not isinstance(user, Employee):
-            raise TypeError('%s is not an auth user' % str(user))
-
-        if user.is_superuser or user == self.employee:
-            return True
-
-        return False
-
-
-class ShiftSummaryManager(ChuchoManager):
-    def get_editable_by_pk(self, user, pk):
-        '''
-        ' Get's an instance of ShiftSummery specified by a pk if the given user is allowed to edit it.
-        '
-        ' Keyword Arguments: 
-        '   user - User to check if the user can be edited by them.
-        '   pk   - Primary key of ShiftSummery to get.
-        '
-        ' Return: ShiftSummery identified by pk if user can edit it, otherwise None.
-        '''
-        
-        if not isinstance(user, Employee):
-            raise TypeError('%s is not an Auth User' % str(user))
-
-        try:
-            u = self.get(id=pk)
-        except ShiftSummary.DoesNotExist:
-            raise ShiftSummary.DoesNotExist("A ShiftSummary does not exist for the primary key %s." % str(pk))
-
-        if user.is_superuser or u.employee == user:
-            return u
-        return None
-
-    def can_edit(self, user):
-        '''
-        ' Checks if a User is allowed to edit or add instances of this model.
-        '
-        ' Keyword Arguments:
-        '   user - User to check permission for.
-        '
-        ' Return: True if user is allowed to edit objects of this model and False otherwise.
-        '''
-
-        #Validate user object
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an auth user" % str(user))
-
-        return True
-
-
-    def get_viewable(self, user, filter_args=None, omni=None):
-        '''
-        ' Gets all ShiftSummerys that can be viewed or assigned by a specific AuthUser.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter viewable ShiftSummerys by.
-        '
-        ' Return: QuerySet of ShiftSummerys that can be viewed by specified user.
-        '''
-        # TODO: Wrapper until we decide to differentiate this from editable.
-        return self.get_editable(user, filter_args, omni)
-
-
-    def get_editable(self, user, filter_args=None, omni=None):
-        ''' 
-        ' Gets all the users that can be edited by a specified user.
-        '
-        ' Right now only superusers can edit.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter editable employees by.
-        '
-        ' Return: QuerySet of ShiftSummerys that are viewable by the specified User.
-        '''
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an Auth User" % str(user))
-        
-        if filter_args is not None and len(filter_args) > 0:
-            objs = self.filter(**filter_args)
-        elif omni is not None:
-            objs = self.search(omni)
-        else:
-            objs = self.all()
-
-        if user.is_superuser:
-            return objs
-        
-        return objs.filter(employee=user)
+class ShiftSummaryManager(models.Manager):
+    pass
 
 
 class ShiftSummary(models.Model):
     job = models.ForeignKey('Job')
-    employee = models.ForeignKey('Employee')
-    shift = models.ForeignKey('Shift')
-    hours = models.IntegerField('total hours')
+    totalHours = models.DecimalField(max_digits=4, decimal_places=2)
     miles = models.DecimalField(max_digits = 6, decimal_places = 2, null = True, blank=True)
-    note = models.TextField('notes about job')
+    note = models.TextField()
 
     objects = ShiftSummaryManager()
 
-    column_options = {
-        'id': {'grid_column': False}
-        }
 
-    # chucho omni search fields
-    search_fields = ['job', 'employee', 'shift']
-
-    class Meta:
-        db_table = 'Shift Summary'
-        ordering = ['shift', 'employee', 'job']
-
-    def __unicode__(self):
-        data = self.shift.time_in.date().strftime("%Y-%m-%d") + "    EMPLOYEE: " + self.employee.first_name + "  " + self.employee.last_name + "    JOB: " + self.job.name
-        return data
-
-
-class JobManager(ChuchoManager):
-    def get_editable_by_pk(self, user, pk):
-        '''
-        ' Get's an instance of Job specified by a pk if the given user is allowed to edit it.
-        '
-        ' Keyword Arguments: 
-        '   user - User to check if the user can be edited by them.
-        '   pk   - Primary key of Job to get.
-        '
-        ' Return: Job identified by pk if user can edit it, otherwise None.
-        '''
-        if not isinstance(user, Employee):
-            raise TypeError('%s is not an Auth User' % str(user))
-
-        try:
-            u = self.get(id=pk)
-        except Job.DoesNotExist:
-            raise Job.DoesNotExist("A Job does not exist for the primary key %s." % str(pk))
-
-        if user.is_superuser:
-            return u
-        return None
-
-    def can_edit(self, user):
-        '''
-        ' Checks if a User is allowed to edit or add instances of this model.
-        '
-        ' Keyword Arguments:
-        '   user - User to check permission for.
-        '
-        ' Return: True if user is allowed to edit objects of this model and False otherwise.
-        '''
-
-        #Validate user object
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an auth user" % str(user))
-
-        if user.is_superuser:
-            return True
-
-        return False
-
-
-    def get_viewable(self, user, filter_args=None, omni=None):
-        '''
-        ' Gets all Jobs that can be viewed or assigned by a specific AuthUser.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter viewable Jobs by.
-        '
-        ' Return: QuerySet of Jobs that can be viewed by specified user.
-        '''
-       
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an Auth User" % str(user))
-       
-        if filter_args is not None:
-            objs = self.filter(**filter_args)
-        elif omni is not None:
-            objs = self.search(omni)
-        else:
-            objs = self.all()
-
-        return objs.filter(is_active=True)
-
-
-    def get_editable(self, user, filter_args=None, omni=None):
-        ''' 
-        ' Gets all the users that can be edited by a specified user.
-        '
-        ' Right now only superusers can edit.
-        '
-        ' Keyword Arguments:
-        '   user - User to filter editable employees by.
-        '
-        ' Return: QuerySet of Jobs that are viewable by the specified User.
-        '''
-        if not isinstance(user, Employee):
-            raise TypeError("%s is not an Auth User" % str(user))
-
-        if user.is_superuser:
-            if filter_args is not None and len(filter_args) > 0:
-                return self.filter(**filter_args)
-            elif omni is not None:
-                print omni
-                return self.search(omni)
-            else:
-                return self.all()
-        return self.none()
+class JobManager(models.Manager):
+    pass
 
 
 class Job(models.Model):
-    name = models.CharField('job name', max_length = 25)
-    description = models.TextField('job description')
-    is_active = models.BooleanField() 
+    name = models.CharField(max_length = 25)
+    description = models.TextField()
+    isActive = models.BooleanField() 
 
     objects = JobManager()
 
-    column_options = {
-        'id': {'grid_column': False}
-        }
-
-    # chucho omni search fields
-    search_fields = ['name', 'description']
-
     class Meta:
-        db_table = 'Job'
-        ordering = ['-is_active']
+        ordering = ['-isActive']
 
     def __unicode__(self):
         return self.name
 
-    def can_view(self, user):
-        '''
-        ' Checks if a User instance is allowed to view this object instance or not.
-        '
-        ' Keyword Arguments:
-        '   user - AuthUser to check if they have permissions.
-        '
-        ' Return: True if user is allowed to view and False otherwise.
-        '''
-
-        if not isinstance(user, Employee):
-            raise TypeError('%s is not an auth user' % str(user))
-
-        return True
