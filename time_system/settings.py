@@ -11,11 +11,8 @@ ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
 
-#AUTH_USER_MODEL = "clocker.Employee"
-
 #Global time format for datetime objects
 DT_FORMAT = "%m/%d/%Y %H:%M:%S"
-D_FORMAT = "%m/%d/%Y"
 
 AUTH_USER_MODEL = "clocker.Employee"
 
@@ -68,8 +65,6 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = True
 
-#USE_TZ = True
-
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
 MEDIA_ROOT = ''
@@ -105,23 +100,11 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'dajaxice.finders.DajaxiceFinder',
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '1=_^^$ol#3vhymf5qt9#ecky6cnq48_@u&b-%_%!w(ou12y0o^'
-
-# Added for dajaxice context_processors.request might be the only needed...
-TEMPLATE_CONTEXT_PROCESSORS = ( 
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.static',
-    'django.core.context_processors.request',
-    'django.contrib.messages.context_processors.messages'
-)
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -152,7 +135,6 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'dajaxice',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
@@ -160,8 +142,6 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     #'django.contrib.admindocs',
     'clocker',
-    'chucho',
-    'south',
     'bootstrap'
 )
 
