@@ -27,7 +27,7 @@ class Employee(AbstractBaseUser):
         ordering = ['username']
 
     def __unicode__(self):
-        return self.first_name + " " + self.last_name
+        return self.firstName + " " + self.lastName
 
     def clockIn(self, timeIn):
         
