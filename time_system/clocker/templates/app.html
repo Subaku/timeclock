@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block additionalHeaders %}
+    <script data-main="{{STATIC_URL}}js/main" src="{{STATIC_URL}}js/libs/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/app.css"/>
+{% endblock additionalHeaders %}
+
+{% block content %}
+
+<div id="clocker">
+    <form name="main_page" method="post">
+        {% csrf_token %}
+        <div class="radio_buttons">
+            {% ifequal user_status "out" %}
+                 <label>
+                    <input id="status-in" type="radio" name="status" value="In" checked="checked">
+                     Clock In
+                 </label>
+                 <label>
+                     <input id="status-out" type="radio" name="status" value="Out" disabled="disabled">
+                     Clock Out
+                 </label>
+                 <br>
+            {% else %}
+                 <label>
+                     <input id="status-in" type="radio" name="status" value="In" disabled="disabled">
+                     Clock In
+                 </label>
+                 <label>
+                     <input id="status-out" type="radio" name="status" value="Out" checked="checked">
+                     Clock Out
+                 </label>
+                 <br>
+            {% endifequal %}
+                 <input type="submit" value="Submit">
+        </div>
+    </form>
+</div>
+
+<div class="cf">
+<div id="hour_management">
+    <form name="admin" action="hours/" method="post">
+        {% csrf_token %}
+    
+            <table style="border-style: none;">
+                <tr>
+                    <th colspan="2" style="text-align: left;">View Hours(Admin)</th>
+                </tr>
+    
+                <tr>
+                    <td>From </td>
+                    <td> <input type="text" id="from" name="from"/> </td>
+                </tr>
+    
+                <tr>
+                    <td>To</td>
+                    <td> <input type="text" id="to" name="to"/>  </td>
+                </tr>
+    
+                <tr>
+                    <td>Employee</td>
+                    <td> 
+                        <select name="user_name">
+                            {% if is_admin %}
+                                {% for emp in employee %}
+                                    {% if emp.is_active %}
+                                        <option value="{{emp.username}}">{{emp}}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <option value="{{user.username}}">{{user.username}}</option>
+                            {% endif %}
+                        </select> 
+                    </td>
+                </tr>
+    
+                <tr>
+                    <td></td>
+                    <td> <input type="submit" value="Submit" name="Submit"></td>
+                </tr>
+            </table>
+    </form>
+</div>
+    
+<div id="management">
+    {% if is_admin %}
+        <div class="click">
+            <span class="clickable" id="manage_employees" onclick="load_model_grid('clocker', 'Employee');">
+                Manage Employees
+            </span>
+        </div>
+        
+        <div class="click">
+            <span class="clickable" id="manage_jobs" onclick="load_model_grid('clocker', 'Job');">
+                Manage Jobs
+            </span>
+        </div>
+    {% endif %}
+    
+    <div class="click">
+        <span class="clickable" id="manage_shift_summaries" onclick="load_model_grid('clocker', 'ShiftSummary');">
+            Manage Shift Summaries
+        </span>
+    </div>
+    
+    <div class="click">
+        <span class="clickable" id="manage_shift_shifts" onclick="load_model_grid('clocker', 'Shift');">
+            Manage Shifts
+        </span>
+    </div>
+</div>
+<div id="management_content" style="position: absolute;"></div>
+</div>	
+
+{% endblock content %}

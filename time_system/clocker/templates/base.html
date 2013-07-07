@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/base.css"/>
+        <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/cf.css"/>
+    
+        <!--bootstrap-->
+        <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/bootstrap-responsive.min.css">
+        <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/bootstrap.min.css">
+
+        {% block additionalHeaders %}{% endblock additionalHeaders %}
+    </head>
+    <body>
+    	<div id="container">
+		
+            <div class="logoContainer">
+                <a href="/"><img src="{{STATIC_URL}}img/Visgence_incwhite.png" height="80px" width="150px" /></a>
+
+			    <div class="timeclock_logo">
+			        <img src="{{STATIC_URL}}img/timeclock2.png" height="90px" width="320px" />
+			    </div>
+			</div>
+			
+	        <div id="content">
+	            {% block content %} {%endblock%}
+			</div> 
+		</div>
+		
+		<div class="visweb_link"> 
+			<a href="http://www.visgence.com/" target="_blank"><img src="{{STATIC_URL}}img/Visgence_grey.png" height="50px" width="110px" /></a>
+		</div>
+		
+    </body>
+</html>
+
+
+

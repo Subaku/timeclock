@@ -1,0 +1,23 @@
+{%extends "base.html"%}
+
+{% block additionalHeaders %}
+    <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/login.css"/>
+{% endblock additionalHeaders %}
+
+{% block content %}
+
+    <div id="loginContainer">
+        <form action="/login/" method="post">
+            {% csrf_token %}
+            <b>Username</b><input type="text" name="username" maxlength="30" /> 
+            <b>Password</b><input type="password" name="password"/> 
+            {% if error %}
+                <span class="error">{{error}}</span>
+            {% endif %}
+            <input type="submit" value="Log in"/> 
+        </form>    
+    </div>
+
+{% endblock %}
+
+
