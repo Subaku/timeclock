@@ -1,12 +1,48 @@
-from django.http import HttpResponseRedirect, HttpResponse
-from django.template import loader
-from django.template.context import RequestContext
-from django.core.context_processors import csrf
-from django.contrib.auth import authenticate, login
-from django.contrib.auth import logout as auth_logout
-from check_access import check_access
-from clocker.models import Employee
 
+from django.http import HttpResponse
+from django.template import loader, RequestContext
+from django.contrib.auth import authenticate, login
+#from django.core.context_processors import csrf
+#from django.contrib.auth import logout as auth_logout
+#from check_access import check_access
+#from clocker.models import Employee
+
+def renderLogin(request, context=None):
+
+    if context is None or not isinstance(context, dict):
+        context = {}
+
+    t = loader.get_template('login.html')
+    c = RequestContext(request, context)
+    return HttpResponse(t.render(c), mimetype="text/html")
+
+
+def loginUser(request):
+    
+    #TODO: check_access or middleware
+   
+    #TODO: proper 404 handling
+    if request.method != 'POST':
+        return HttpResponse('404');
+    
+    username = request.POST.get("username", '')
+    password = request.POST.get("password", '')
+    user = authenticate(username=username, password=password)
+    if user is None:
+        return renderLogin(request, {'error': "Incorrect username or password"})
+
+    if not user.isActive:
+        return renderLogin(request, {'error': "User is deactivated"})
+    
+    login(request, user)
+
+    t = loader.get_template('app.html')
+    c = RequestContext(request, {})
+    return HttpResponse(t.render(c), mimetype="text/html")
+
+
+
+'''
 def view(request):
 
     error = ''
@@ -36,4 +72,4 @@ def view(request):
 def logout(request):
     auth_logout(request)
     return HttpResponseRedirect("/timeclock/login/")
-
+'''
