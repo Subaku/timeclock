@@ -2,7 +2,7 @@
 from django.http import HttpResponse
 from django.template import loader, RequestContext
 
-def renderApp(request):
+def renderApp(request, user):
     
     t = loader.get_template('app.html')
     c = RequestContext(request, {})

@@ -1,11 +1,12 @@
 from django.http import HttpResponseRedirect, HttpResponse
+from settings import SESSION_TIMEOUT
 
 class CheckAccess():
     '''
     ' Middleware that validates that a user is logged into the app and is active.
     '''
 
-    def process_view(self, request, view_func, *args, **kwargs):
+    def process_view(self, request, view_func, args, kwargs):
        
         #If there are decorators then make sure none of them are 
         #'login_exempt' before continueing
@@ -21,5 +22,10 @@ class CheckAccess():
         #Give custom page telling them they are no longer active
         if not request.user.isActive:
             return HttpResponse("user no longer active!")
+        
+        request.session.set_expiry(SESSION_TIMEOUT)
+        
+        #Pass along logged in user to view
+        kwargs.update({'user': request.user})
 
         return None
