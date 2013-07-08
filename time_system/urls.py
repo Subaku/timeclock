@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, include, url
-#from django.views.generic import RedirectView
+from django.views.generic import RedirectView
 #from django.contrib import admin
 #from dajaxice.core import dajaxice_config, dajaxice_autodiscover
 #from settings import APP_PATH, DEBUG
@@ -11,8 +11,12 @@ from django.conf.urls import patterns, include, url
 urlpatterns = patterns('clocker.views.login',
     url(r'^$', 'renderLogin', name="render-login"),
     url(r'^login/$', 'loginUser', name="login"),
+    url(r'^logout/$', 'logoutUser', name="logout"),
 )
 
+urlpatterns += patterns('clocker.views.app', 
+    url(r'^timeclock/$', 'renderApp', name="render-app"),
+)
 
 '''
 #normal views
