@@ -28,7 +28,6 @@ def GET_PERMISSION_OBJ():
     from django.contrib.auth import get_user_model
     return get_user_model()
 
-
 try:
     from local_database_settings import DATABASES
 except:
@@ -119,6 +118,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'clocker.middleware.CheckAccess'
 )
 
 ROOT_URLCONF = 'urls'
