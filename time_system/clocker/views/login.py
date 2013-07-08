@@ -1,26 +1,29 @@
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader, RequestContext
 from django.contrib.auth import authenticate, login
-#from django.core.context_processors import csrf
-#from django.contrib.auth import logout as auth_logout
-#from check_access import check_access
-#from clocker.models import Employee
+from django.contrib.auth import logout
+from clocker.decorators import login_exempt
 
-def renderLogin(request, context=None):
+@login_exempt
+def renderLogin(request, context={}):
+    '''
+    ' Renders the login page of the app
+    '''
 
-    if context is None or not isinstance(context, dict):
-        context = {}
+    assert isinstance(context, dict)
 
     t = loader.get_template('login.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c), mimetype="text/html")
 
 
+@login_exempt
 def loginUser(request):
-    
-    #TODO: check_access or middleware
-   
+    '''
+    ' Logs a user into the app if they provide the proper username and password
+    '''
+
     #TODO: proper 404 handling
     if request.method != 'POST':
         return HttpResponse('404');
@@ -35,41 +38,14 @@ def loginUser(request):
         return renderLogin(request, {'error': "User is deactivated"})
     
     login(request, user)
-
-    t = loader.get_template('app.html')
-    c = RequestContext(request, {})
-    return HttpResponse(t.render(c), mimetype="text/html")
+    return HttpResponseRedirect('/timeclock/')
 
 
+def logoutUser(request):
+    '''
+    ' Logs a user out of the system and sends them back to the login page
+    '''
 
-'''
-def view(request):
+    logout(request)
+    return HttpResponseRedirect("/")
 
-    error = ''
-
-    response = check_access(request)
-    if(isinstance(response, Employee)):
-        return HttpResponseRedirect('/timeclock/')
-
-    if request.method == 'POST':
-        user = authenticate(username=request.POST["username"], password=request.POST["password"])
-        if user is not None:
-            if user.is_active:
-                login(request, user)
-                return HttpResponseRedirect('/timeclock/')
-            else:
-                error = "Account disabled"
-        else:
-            error = "Invalid login";
-
-
-    request.user = None
-    t = loader.get_template('login.html');
-    c = RequestContext(request, {'error':error})
-    c.update(csrf(request));
-    return HttpResponse(t.render(c))
-
-def logout(request):
-    auth_logout(request)
-    return HttpResponseRedirect("/timeclock/login/")
-'''
