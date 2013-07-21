@@ -1,9 +1,9 @@
-
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader, RequestContext
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import logout
 from clocker.decorators import login_exempt
+
 
 @login_exempt
 def renderLogin(request, context={}):
@@ -12,6 +12,10 @@ def renderLogin(request, context={}):
     '''
 
     assert isinstance(context, dict)
+
+    user = request.user
+    if user.is_authenticated() and user.isActive:
+        return HttpResponseRedirect('/timeclock/')
 
     t = loader.get_template('login.html')
     c = RequestContext(request, context)
@@ -41,6 +45,7 @@ def loginUser(request):
     return HttpResponseRedirect('/timeclock/')
 
 
+@login_exempt
 def logoutUser(request):
     '''
     ' Logs a user out of the system and sends them back to the login page
