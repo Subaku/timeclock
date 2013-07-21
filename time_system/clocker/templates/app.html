@@ -3,39 +3,20 @@
 {% block additionalHeaders %}
     <script data-main="{{STATIC_URL}}js/main" src="{{STATIC_URL}}js/libs/require.js"></script>
     <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/app.css"/>
+
+    <meta name="csrf-token" content="{{csrf_token}}">
 {% endblock additionalHeaders %}
 
 {% block content %}
 
-<div id="clocker">
-    <form name="main_page" method="post">
-        {% csrf_token %}
-        <div class="radio_buttons">
-            {% ifequal user_status "out" %}
-                 <label>
-                    <input id="status-in" type="radio" name="status" value="In" checked="checked">
-                     Clock In
-                 </label>
-                 <label>
-                     <input id="status-out" type="radio" name="status" value="Out" disabled="disabled">
-                     Clock Out
-                 </label>
-                 <br>
-            {% else %}
-                 <label>
-                     <input id="status-in" type="radio" name="status" value="In" disabled="disabled">
-                     Clock In
-                 </label>
-                 <label>
-                     <input id="status-out" type="radio" name="status" value="Out" checked="checked">
-                     Clock Out
-                 </label>
-                 <br>
-            {% endifequal %}
-                 <input type="submit" value="Submit">
-        </div>
-    </form>
+<div class="greeting">
+    {% if user %}
+        Hello {{user.firstName}} {{user.lastName}}
+        <a href="/logout/">Logout</a>
+    {% endif %}
 </div>
+
+<div id="clocker"></div>
 
 <div class="cf">
 <div id="hour_management">
