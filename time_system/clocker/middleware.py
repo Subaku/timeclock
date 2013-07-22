@@ -24,8 +24,4 @@ class CheckAccess():
             return HttpResponse("user no longer active!")
         
         request.session.set_expiry(SESSION_TIMEOUT)
-        
-        #Pass along logged in user to view
-        kwargs.update({'user': request.user})
-
         return None
